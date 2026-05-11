@@ -1,18 +1,24 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 
-export default async function AuthRedirectPage() {
-  const session = await getServerSession(authOptions);
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-  if (!session?.user?.email) redirect("/login");
+export default async function RedirectPage() {
+  const session = await auth();
+
+  if (!session?.user?.email) {
+    redirect("/login");
+  }
 
   if (session.user.role === "pandit") {
     redirect("/pandit");
   }
 
-  // ✅ already comes from session callback
-  if (!session.user.username || !session.user.dob) {
+  if (
+    !session.user.username ||
+    !session.user.dob
+  ) {
     redirect("/username");
   }
 
