@@ -4,55 +4,91 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { randomBytes } from "crypto";
 
+export const runtime = "nodejs";
+
 export async function POST(req) {
-  const cookieStore = await cookies();
-  const userId = cookieStore.get("userId")?.value;
+  try {
+    const cookieStore = cookies();
 
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+    const userId = cookieStore.get("userId")?.value;
 
-  const { panditId } = await req.json();
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
 
-  const user = await prisma.user.findUnique({ where: { id: userId } });
+    const { panditId } = await req.json();
 
-  if (!user) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
-  }
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
 
-  if (!user.username || !user.dob) {
-    return NextResponse.json({ error: "INCOMPLETE_PROFILE" }, { status: 403 });
-  }
+    if (!user) {
+      return NextResponse.json(
+        { error: "User not found" },
+        { status: 404 }
+      );
+    }
 
-  // Cancel any previous INITIATED calls to same pandit
-  await prisma.call.updateMany({
-    where: { userId, panditId, status: "INITIATED" },
-    data: { status: "FAILED" },
-  });
+    if (!user.username || !user.dob) {
+      return NextResponse.json(
+        { error: "INCOMPLETE_PROFILE" },
+        { status: 403 }
+      );
+    }
 
-const channelName = `ch${randomBytes(8).toString("hex")}`; 
-  const uid = Math.floor(Math.random() * 100000);
-  const token = generateAgoraToken(channelName, uid);
+    await prisma.call.updateMany({
+      where: {
+        userId,
+        panditId,
+        status: "INITIATED",
+      },
+      data: {
+        status: "FAILED",
+      },
+    });
 
-  const call = await prisma.call.create({
-    data: {
-      userId,
-      panditId,
+    const channelName = `ch${randomBytes(8).toString("hex")}`;
+
+    const uid = Math.floor(
+      Math.random() * 100000
+    );
+
+    const token = generateAgoraToken(
       channelName,
-      agoraToken: token,
-      type: "VOICE",
-      billingType: "PLAN",
-      ratePerMinute: 0,
-      status: "INITIATED",
-    },
-  });
+      uid
+    );
 
-  return NextResponse.json({
-    callId: call.id,
-    channelName,
-    token,
-    appId: process.env.AGORA_APP_ID,
-    uid,
-    planMinutesLeft: 999,
-  });
+    const call = await prisma.call.create({
+      data: {
+        userId,
+        panditId,
+        channelName,
+        agoraToken: token,
+        type: "VOICE",
+        billingType: "PLAN",
+        ratePerMinute: 0,
+        status: "INITIATED",
+      },
+    });
+
+    return NextResponse.json({
+      callId: call.id,
+      channelName,
+      token,
+      appId: process.env.AGORA_APP_ID,
+      uid,
+      planMinutesLeft: 999,
+    });
+
+  } catch (error) {
+    console.error("INITIATE ERROR:", error);
+
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
 }

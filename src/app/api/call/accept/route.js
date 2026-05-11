@@ -2,43 +2,61 @@ import { prisma } from "@/lib/prisma";
 import { generateAgoraToken } from "@/lib/agora";
 import { cookies } from "next/headers";
 
+export const runtime = "nodejs";
+
 export async function POST(req) {
   try {
-    // ✅ Auth check
-    const cookieStore = await cookies();
+    const cookieStore = cookies();
+
     const userId = cookieStore.get("userId")?.value;
 
     if (!userId) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
+      return Response.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
     const { callId } = await req.json();
 
     if (!callId) {
-      return Response.json({ error: "Missing callId" }, { status: 400 });
+      return Response.json(
+        { error: "Missing callId" },
+        { status: 400 }
+      );
     }
 
     const call = await prisma.call.findUnique({
       where: { id: callId },
       include: {
         pandit: {
-          select: { name: true, speciality: true },
+          select: {
+            name: true,
+            speciality: true,
+          },
         },
       },
     });
 
     if (!call) {
-      return Response.json({ error: "Call not found" }, { status: 404 });
+      return Response.json(
+        { error: "Call not found" },
+        { status: 404 }
+      );
     }
 
     const uid = Math.floor(Math.random() * 100000);
-    const token = generateAgoraToken(call.channelName, uid);
+
+    const token = generateAgoraToken(
+      call.channelName,
+      uid
+    );
 
     const updatedCall = await prisma.call.update({
       where: { id: callId },
       data: {
         status: "ONGOING",
-        startTime: new Date(), // ✅ correct field name
+        startTime: new Date(),
       },
     });
 
@@ -51,8 +69,12 @@ export async function POST(req) {
       pandit: call.pandit,
     });
 
-  } catch (err) {
-    console.error("❌ ACCEPT API ERROR:", err.message);
-    return Response.json({ error: "Internal server error" }, { status: 500 });
+  } catch (error) {
+    console.error("ACCEPT ERROR:", error);
+
+    return Response.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
