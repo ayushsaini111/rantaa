@@ -1,7 +1,9 @@
 import { verifyOTP } from "@/lib/twilio";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers"; // This is a function
+import { cookies } from "next/headers";
+
+export const runtime = "nodejs";
 
 export async function POST(req) {
   try {
@@ -10,7 +12,10 @@ export async function POST(req) {
     const result = await verifyOTP(phone, otp);
 
     if (result.status !== "approved") {
-      return NextResponse.json({ error: "Invalid OTP" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invalid OTP" },
+        { status: 400 }
+      );
     }
 
     const user = await prisma.user.upsert({
@@ -23,9 +28,8 @@ export async function POST(req) {
       },
     });
 
-    // ✅ FIX: Initialize the cookie store
-    const cookieStore = await cookies(); 
-    
+    const cookieStore = cookies();
+
     cookieStore.set("userId", user.id, {
       maxAge: 60 * 60 * 24 * 30,
       httpOnly: true,
@@ -34,13 +38,21 @@ export async function POST(req) {
     });
 
     if (!user.username || !user.dob) {
-      return NextResponse.json({ redirect: "/username" });
+      return NextResponse.json({
+        redirect: "/username",
+      });
     }
 
-    return NextResponse.json({ redirect: "/home" });
+    return NextResponse.json({
+      redirect: "/home",
+    });
 
   } catch (error) {
     console.error("Auth Error:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }
