@@ -1,6 +1,8 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { Pool } from "pg";
+import pkg from "pg";
+
+const { Pool } = pkg;
 
 const globalForPrisma = globalThis;
 
@@ -12,11 +14,8 @@ export const prisma =
         connectionString: process.env.DATABASE_URL,
         ssl: { rejectUnauthorized: false },
         max: 1,
-        connectionTimeoutMillis: 15000,
-        idleTimeoutMillis: 30000,
       })
     ),
-    log: ["error"],
   });
 
 if (process.env.NODE_ENV !== "production") {
