@@ -1,10 +1,10 @@
-import { auth } from "@/auth";
+import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export default async function RedirectPage() {
+export default async function AuthRedirectPage() {
   const session = await auth();
 
   if (!session?.user?.email) {

@@ -7,12 +7,7 @@ const PANDIT_EMAILS = [
   "abhijeetdwivedi627@gmail.com",
 ];
 
-export const {
-  handlers,
-  auth,
-  signIn,
-  signOut,
-} = NextAuth({
+export const authOptions = {
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID,
@@ -28,9 +23,7 @@ export const {
 
         if (isPandit) {
           await prisma.pandit.upsert({
-            where: {
-              email: user.email,
-            },
+            where: { email: user.email },
 
             update: {
               name: user.name ?? "Pandit",
@@ -50,9 +43,7 @@ export const {
 
         } else {
           await prisma.user.upsert({
-            where: {
-              email: user.email,
-            },
+            where: { email: user.email },
 
             update: {
               profilePic:
@@ -133,4 +124,11 @@ export const {
   },
 
   secret: process.env.NEXTAUTH_SECRET,
-});
+};
+
+export const {
+  handlers,
+  auth,
+  signIn,
+  signOut,
+} = NextAuth(authOptions);
