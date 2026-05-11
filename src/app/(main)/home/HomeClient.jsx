@@ -219,7 +219,7 @@ if (activeCallData) {
       {/* Header */}
 <div className="flex justify-between items-center mb-8">
   <div className="flex items-center gap-4">
-    {/* Profile Image - User side */}
+    {/* Profile Image - User side  jhgjhg*/}
     <div className="relative w-14 h-14 overflow-hidden rounded-full border border-black/5 shadow-sm bg-gray-100 flex-shrink-0">
       <Image
         src={profilePic || "/default-avatar.png"} 
