@@ -1,6 +1,5 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import HomeClient from "./HomeClient";
 
@@ -9,12 +8,16 @@ export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   try {
+    // Lazy Prisma import
+    const { prisma } = await import(
+      "@/lib/prisma"
+    );
+
     const cookieStore = cookies();
 
     const userId =
       cookieStore.get("userId")?.value;
 
-    // Google login session
     const session = await auth();
 
     console.log(
@@ -29,7 +32,7 @@ export default async function HomePage() {
 
     let user = null;
 
-    // ── OTP Login User ──
+    // OTP users
     if (userId) {
       user = await prisma.user.findUnique({
         where: {
@@ -58,10 +61,9 @@ export default async function HomePage() {
       });
     }
 
-    // ── Google Login User ──
+    // Google users
     if (!user && session?.user?.email) {
 
-      // Prevent pandits from entering user home
       if (session.user.role === "pandit") {
         redirect("/pandit");
       }
@@ -93,30 +95,14 @@ export default async function HomePage() {
       });
     }
 
-    console.log(
-      "🏠 home user from DB:",
-      user
-    );
-
-    // ── Not logged in ──
     if (!user) {
-      console.log(
-        "❌ No user found — redirect login"
-      );
-
       redirect("/login");
     }
 
-    // ── Incomplete profile ──
     if (!user.username || !user.dob) {
-      console.log(
-        "❌ Incomplete profile"
-      );
-
       redirect("/username");
     }
 
-    // ── Available pandits ──
     const pandits =
       await prisma.pandit.findMany({
         where: {
@@ -128,7 +114,6 @@ export default async function HomePage() {
         },
       });
 
-    // ── Active Plan ──
     const activePlan = user?.plans?.[0]
       ? {
           name:

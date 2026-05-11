@@ -20,7 +20,6 @@ export const authOptions = {
   callbacks: {
     async signIn({ user }) {
       try {
-        // Lazy import Prisma
         const { prisma } = await import(
           "@/lib/prisma"
         );
