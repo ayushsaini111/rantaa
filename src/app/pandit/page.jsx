@@ -1,19 +1,57 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import PanditDashboard from "./PanditDashboard";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 export default async function PanditPage() {
-  const session = await getServerSession(authOptions);
+  try {
+    const session = await auth();
 
-  if (!session?.user?.email) redirect("/login");
+    console.log(
+      "🧘 pandit session:",
+      session?.user?.email
+    );
 
-  const pandit = await prisma.pandit.findUnique({
-    where: { email: session.user.email },
-  });
+    if (!session?.user?.email) {
+      redirect("/login");
+    }
 
-  if (!pandit) redirect("/login");
+    // Only pandits allowed
+    if (session.user.role !== "pandit") {
+      redirect("/home");
+    }
 
-  return <PanditDashboard pandit={pandit} />;
+    const pandit =
+      await prisma.pandit.findUnique({
+        where: {
+          email: session.user.email,
+        },
+      });
+
+    console.log(
+      "🧘 pandit from db:",
+      pandit
+    );
+
+    if (!pandit) {
+      redirect("/login");
+    }
+
+    return (
+      <PanditDashboard
+        pandit={pandit}
+      />
+    );
+
+  } catch (error) {
+    console.error(
+      "❌ PANDIT PAGE ERROR:",
+      error
+    );
+
+    redirect("/login");
+  }
 }
