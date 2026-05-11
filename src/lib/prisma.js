@@ -1,4 +1,4 @@
-import { PrismaClient } from "../generated/prisma";
+import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 
@@ -9,7 +9,7 @@ export const prisma =
   new PrismaClient({
     adapter: new PrismaPg(
       new Pool({
-        connectionString: process.env.DATABASE_URL, // ← use pooler, not direct
+        connectionString: process.env.DATABASE_URL,
         ssl: { rejectUnauthorized: false },
         max: 1,
         connectionTimeoutMillis: 15000,
